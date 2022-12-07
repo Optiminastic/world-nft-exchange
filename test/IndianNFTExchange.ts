@@ -32,16 +32,15 @@ describe("IndianNFTExchange", function () {
     it("Should only be updated by owner", async () => {
       const { indianNFTExchange, otherAccount } =
         await deployIndianNFTExchange();
-      expect(
+      await expect(
         indianNFTExchange
           .connect(otherAccount)
           .updateListingPrice(ethers.utils.parseEther("0.05"))
-      ).to.be.revertedWith("Only owner can update listing price");
+      ).to.be.revertedWith("Ownable: caller is not the owner");
     });
 
     it("Successful Updation of listing price", async () => {
-      const { indianNFTExchange, otherAccount } =
-        await deployIndianNFTExchange();
+      const { indianNFTExchange } = await deployIndianNFTExchange();
       indianNFTExchange.updateListingPrice(ethers.utils.parseEther("0.05"));
       const listingPrice = await indianNFTExchange.getListingPrice();
       expect(listingPrice).to.equal(ethers.utils.parseEther("0.05"));
