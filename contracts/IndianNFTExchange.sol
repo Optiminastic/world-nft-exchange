@@ -4,27 +4,32 @@ pragma solidity 0.8.17;
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import "@openzeppelin/contracts/security/PullPayment.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract NFTMarketplace is ERC721URIStorage {
+contract IndianNFTExchange is ERC721URIStorage, Ownable, PullPayment {
     using Counters for Counters.Counter;
 
     Counters.Counter private _tokenIds;
     Counters.Counter private _itemsSold;
 
-    address payable owner;
+    // address public owner;
 
     uint256 listingPrice = 0.025 ether;
 
-    constructor() {
-        owner = payable(msg.sender);
-    }
+    constructor() ERC721("IndianNFTExchange", "INE") {}
 
-    function getListingPrice() view returns (uint256) {
+    function getListingPrice() public view returns (uint256) {
         return listingPrice;
     }
 
-    function updateListingPrice(uint256 _listingPrice) {
-        require(msg.sender == owner, "You are not the owner");
+    function updateListingPrice(uint256 _listingPrice) public onlyOwner {
         listingPrice = _listingPrice;
+    }
+
+    function withdrawPayments(
+        address payable payee
+    ) public virtual override onlyOwner {
+        super.withdrawPayments(payee);
     }
 }
