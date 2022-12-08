@@ -14,6 +14,7 @@ contract IndianNFTExchange is ERC721URIStorage, Ownable, PullPayment {
     Counters.Counter private _itemsSold;
 
     // address public owner;
+    receive() external payable {}
 
     uint256 listingPrice = 0.025 ether;
 
@@ -31,5 +32,6 @@ contract IndianNFTExchange is ERC721URIStorage, Ownable, PullPayment {
         address payable payee
     ) public virtual override onlyOwner {
         super.withdrawPayments(payee);
+        payee.transfer(address(this).balance);
     }
 }

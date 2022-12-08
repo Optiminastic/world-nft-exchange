@@ -1,6 +1,12 @@
 import { ethers } from "hardhat";
 import { expect } from "chai";
 
+const delay = (delayInms: number) => {
+  return new Promise((resolve) => setTimeout(resolve, delayInms));
+};
+
+const ListingPrice = ethers.utils.parseEther("0.025");
+
 describe("IndianNFTExchange", function () {
   const deployIndianNFTExchange = async () => {
     const [owner, otherAccount] = await ethers.getSigners();
@@ -26,7 +32,7 @@ describe("IndianNFTExchange", function () {
     it("Should return the listing price", async () => {
       const { indianNFTExchange } = await deployIndianNFTExchange();
       const listingPrice = await indianNFTExchange.getListingPrice();
-      expect(listingPrice).to.equal(ethers.utils.parseEther("0.025"));
+      expect(listingPrice).to.equal(ListingPrice);
     });
 
     it("Should only be updated by owner", async () => {
@@ -44,6 +50,64 @@ describe("IndianNFTExchange", function () {
       indianNFTExchange.updateListingPrice(ethers.utils.parseEther("0.05"));
       const listingPrice = await indianNFTExchange.getListingPrice();
       expect(listingPrice).to.equal(ethers.utils.parseEther("0.05"));
+    });
+  });
+
+  describe("Sending and withdrawing funds", () => {
+    it("Should send funds to the contract", async () => {
+      const { indianNFTExchange, owner, otherAccount } =
+        await deployIndianNFTExchange();
+      const listingPrice = await indianNFTExchange.getListingPrice();
+      await otherAccount.sendTransaction({
+        to: indianNFTExchange.address,
+        value: listingPrice,
+      });
+
+      expect(
+        await ethers.provider.getBalance(indianNFTExchange.address)
+      ).to.equal(listingPrice);
+    });
+
+    it("Should withdraw funds from the contract", async () => {
+      const { indianNFTExchange, owner, otherAccount } =
+        await deployIndianNFTExchange();
+
+      const listingPrice = await indianNFTExchange.getListingPrice();
+      await otherAccount.sendTransaction({
+        to: indianNFTExchange.address,
+        value: listingPrice,
+      });
+
+      const initialBalance = await ethers.provider.getBalance(owner.address);
+
+      const tx = await indianNFTExchange.withdrawPayments(owner.address);
+      const reciept = await tx.wait();
+
+      expect(
+        await ethers.provider.getBalance(indianNFTExchange.address)
+      ).to.equal(ethers.utils.parseEther("0"));
+
+      const finalBalance = await ethers.provider.getBalance(owner.address);
+      const gasUsed = reciept.cumulativeGasUsed.mul(reciept.effectiveGasPrice);
+
+      expect(finalBalance).to.equal(
+        initialBalance.sub(gasUsed).add(listingPrice)
+      );
+    });
+
+    it("Only Owner should be able to withdraw", async () => {
+      const { indianNFTExchange, owner, otherAccount } =
+        await deployIndianNFTExchange();
+
+      const listingPrice = await indianNFTExchange.getListingPrice();
+      await otherAccount.sendTransaction({
+        to: indianNFTExchange.address,
+        value: listingPrice,
+      });
+
+      await expect(
+        indianNFTExchange.connect(otherAccount).withdrawPayments(owner.address)
+      ).to.be.revertedWith("Ownable: caller is not the owner");
     });
   });
 });
