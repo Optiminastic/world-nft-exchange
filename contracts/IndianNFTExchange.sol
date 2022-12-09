@@ -24,7 +24,7 @@ contract IndianNFTExchange is ERC721URIStorage, Ownable, PullPayment {
         uint256 price;
         address payable seller;
         address payable owner;
-        address payable originalOwner;
+        address payable creator;
         bool currentlyListed;
     }
 
@@ -34,7 +34,7 @@ contract IndianNFTExchange is ERC721URIStorage, Ownable, PullPayment {
         uint256 price,
         address payable seller,
         address payable owner,
-        address payable originalOwner,
+        address payable creator,
         bool currentlyListed
     );
 
@@ -55,6 +55,10 @@ contract IndianNFTExchange is ERC721URIStorage, Ownable, PullPayment {
     ) public virtual override onlyOwner {
         super.withdrawPayments(payee);
         payable(owner()).transfer(address(this).balance);
+    }
+
+    function getLatestINEItem() public view returns (INEItem memory) {
+        return INEItems[_tokenIds.current()];
     }
 
     function createINEItem(

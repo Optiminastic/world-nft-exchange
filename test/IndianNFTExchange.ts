@@ -16,8 +16,6 @@ describe("IndianNFTExchange", function () {
     );
     const indianNFTExchange = await IndianNFTExchange.deploy();
 
-    console.log(indianNFTExchange.address);
-
     return { indianNFTExchange, owner, otherAccount };
   };
 
@@ -108,6 +106,38 @@ describe("IndianNFTExchange", function () {
       await expect(
         indianNFTExchange.connect(otherAccount).withdrawPayments(owner.address)
       ).to.be.revertedWith("Ownable: caller is not the owner");
+    });
+  });
+
+  describe("Create NFT", () => {
+    it("Should create a new NFT", async () => {
+      const { indianNFTExchange, owner, otherAccount } =
+        await deployIndianNFTExchange();
+
+      const listingPrice = await indianNFTExchange.getListingPrice();
+      const id = await indianNFTExchange
+        .connect(otherAccount)
+        .createINEItem(
+          "https://www.google.com",
+          ethers.utils.parseEther("0.05"),
+          {
+            value: listingPrice,
+          }
+        );
+
+      //  const reciept = await id.wait();
+      // expect(id).to.equal(1);
+
+      const item = await indianNFTExchange.getLatestINEItem();
+      expect(item.id).to.equal(1);
+      expect(item.creator).to.equal(otherAccount.address);
+      expect(item.price).to.equal(ethers.utils.parseEther("0.05"));
+      expect(item.tokenURI).to.equal("https://www.google.com");
+
+      const contractBalance = await ethers.provider.getBalance(
+        indianNFTExchange.address
+      );
+      expect(contractBalance).to.equal(listingPrice);
     });
   });
 });
