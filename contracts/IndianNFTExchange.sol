@@ -81,7 +81,7 @@ contract IndianNFTExchange is ERC721URIStorage, Ownable, PullPayment {
             tokenURI,
             price,
             payable(msg.sender),
-            payable(address(0)),
+            payable(address(this)),
             payable(msg.sender),
             true
         );
@@ -93,7 +93,7 @@ contract IndianNFTExchange is ERC721URIStorage, Ownable, PullPayment {
             tokenURI,
             price,
             payable(msg.sender),
-            payable(address(0)),
+            payable(address(this)),
             payable(msg.sender),
             true
         );

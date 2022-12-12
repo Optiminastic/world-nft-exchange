@@ -1,5 +1,6 @@
 import { ethers } from "hardhat";
 import { expect } from "chai";
+import { exitCode } from "process";
 
 const delay = (delayInms: number) => {
   return new Promise((resolve) => setTimeout(resolve, delayInms));
@@ -125,12 +126,11 @@ describe("IndianNFTExchange", function () {
           }
         );
 
-      //  const reciept = await id.wait();
-      // expect(id).to.equal(1);
-
       const item = await indianNFTExchange.getLatestINEItem();
+
       expect(item.id).to.equal(1);
       expect(item.creator).to.equal(otherAccount.address);
+      expect(item.owner).to.equal(indianNFTExchange.address);
       expect(item.price).to.equal(ethers.utils.parseEther("0.05"));
       expect(item.tokenURI).to.equal("https://www.google.com");
 
