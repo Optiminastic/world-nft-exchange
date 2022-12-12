@@ -140,4 +140,55 @@ describe("IndianNFTExchange", function () {
       expect(contractBalance).to.equal(listingPrice);
     });
   });
+
+  describe("Buy NFT", () => {
+    it("Should buy a NFT", async () => {
+      const { indianNFTExchange, owner, otherAccount } =
+        await deployIndianNFTExchange();
+
+      const listingPrice = await indianNFTExchange.getListingPrice();
+      const id = await indianNFTExchange
+        .connect(otherAccount)
+        .createINEItem(
+          "https://www.google.com",
+          ethers.utils.parseEther("0.05"),
+          {
+            value: listingPrice,
+          }
+        );
+
+      const item = await indianNFTExchange.getLatestINEItem();
+
+      expect(item.id).to.equal(1);
+      expect(item.creator).to.equal(otherAccount.address);
+      expect(item.owner).to.equal(indianNFTExchange.address);
+      expect(item.price).to.equal(ethers.utils.parseEther("0.05"));
+      expect(item.tokenURI).to.equal("https://www.google.com");
+
+      const contractBalance = await ethers.provider.getBalance(
+        indianNFTExchange.address
+      );
+      expect(contractBalance).to.equal(listingPrice);
+
+      const tx = await indianNFTExchange
+        .connect(owner)
+        .buyINEItem(1, { value: ethers.utils.parseEther("0.05") });
+
+      const reciept = await tx.wait();
+
+      const itemAfterBuy = await indianNFTExchange.getLatestINEItem();
+
+      expect(itemAfterBuy.id).to.equal(1);
+      expect(itemAfterBuy.creator).to.equal(otherAccount.address);
+      expect(itemAfterBuy.owner).to.equal(owner.address);
+      expect(itemAfterBuy.price).to.equal(ethers.utils.parseEther("0.05"));
+      expect(itemAfterBuy.tokenURI).to.equal("https://www.google.com");
+      expect(itemAfterBuy.currentlyListed).to.equal(false);
+
+      const contractBalanceAfterBuy = await ethers.provider.getBalance(
+        indianNFTExchange.address
+      );
+      expect(contractBalanceAfterBuy).to.equal(ethers.utils.parseEther("0"));
+    });
+  });
 });
