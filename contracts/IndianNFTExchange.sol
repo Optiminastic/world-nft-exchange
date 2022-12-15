@@ -5,9 +5,10 @@ import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/security/PullPayment.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract IndianNFTExchange is ERC721URIStorage, Ownable, PullPayment {
+contract IndianNFTExchange is ERC721URIStorage, Ownable, ReentrancyGuard {
     using Counters for Counters.Counter;
 
     Counters.Counter private _tokenIds;
@@ -16,7 +17,8 @@ contract IndianNFTExchange is ERC721URIStorage, Ownable, PullPayment {
 
     receive() external payable {}
 
-    uint256 listingPrice = 0.025 ether;
+    uint256 private listingPrice = 0.025 ether;
+    uint256 private successFeePercent = 10;
 
     struct INEItem {
         uint256 id;
@@ -50,15 +52,13 @@ contract IndianNFTExchange is ERC721URIStorage, Ownable, PullPayment {
         listingPrice = _listingPrice;
     }
 
-    function withdrawPayments(
-        address payable payee
-    ) public virtual override onlyOwner {
-        super.withdrawPayments(payee);
-        payable(owner()).transfer(address(this).balance);
-    }
-
     function getLatestINEItem() public view returns (INEItem memory) {
         return INEItems[_tokenIds.current()];
+    }
+
+    function withdraw() public onlyOwner {
+        uint256 balance = address(this).balance;
+        payable(msg.sender).transfer(balance);
     }
 
     function createINEItem(
@@ -124,8 +124,10 @@ contract IndianNFTExchange is ERC721URIStorage, Ownable, PullPayment {
 
         _transfer(address(this), msg.sender, INEItemId);
 
-        INEItems[INEItemId].seller.transfer(msg.value);
+        uint256 sucessFee = (msg.value * successFeePercent) / 100;
+        INEItems[INEItemId].seller.transfer(msg.value - sucessFee);
         payable(owner()).transfer(listingPrice);
+        payable(owner()).transfer(sucessFee);
 
         _itemsSold.increment();
     }
