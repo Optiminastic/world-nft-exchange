@@ -229,5 +229,24 @@ describe("IndianNFTExchange", function () {
       );
       const acc1Balance = await ethers.provider.getBalance(acc1.address);
     });
+
+    it("Should not buy a NFT if price is not equal to listing price", async () => {
+      const { indianNFTExchange, owner, acc1 } = await loadFixture(
+        deployIndianNFTExchange
+      );
+
+      const listingPrice = await indianNFTExchange.getListingPrice();
+      await expect(
+        indianNFTExchange
+          .connect(acc1)
+          .createINEItem(
+            "https://www.google.com",
+            ethers.utils.parseEther("0.05"),
+            {
+              value: ethers.utils.parseEther("0.01"),
+            }
+          )
+      ).to.be.revertedWith("Price must be equal to listing price");
+    });
   });
 });
