@@ -231,22 +231,28 @@ describe("IndianNFTExchange", function () {
     });
 
     it("Should not buy a NFT if price is not equal to listing price", async () => {
-      const { indianNFTExchange, owner, acc1 } = await loadFixture(
+      const { indianNFTExchange, owner, acc1, acc2 } = await loadFixture(
         deployIndianNFTExchange
       );
 
       const listingPrice = await indianNFTExchange.getListingPrice();
+      const id = await indianNFTExchange
+        .connect(acc1)
+        .createINEItem(
+          "https://www.google.com",
+          ethers.utils.parseEther("0.05"),
+          {
+            value: listingPrice,
+          }
+        );
+
       await expect(
-        indianNFTExchange
-          .connect(acc1)
-          .createINEItem(
-            "https://www.google.com",
-            ethers.utils.parseEther("0.05"),
-            {
-              value: ethers.utils.parseEther("0.01"),
-            }
-          )
-      ).to.be.revertedWith("Price must be equal to listing price");
+        indianNFTExchange.connect(acc2).buyINEItem(1, {
+          value: ethers.utils.parseEther("0.01"),
+        })
+      ).to.be.revertedWith(
+        "Please submit the asking price in order to complete the purchase"
+      );
     });
   });
 });
