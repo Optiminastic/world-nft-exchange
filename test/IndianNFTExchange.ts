@@ -296,4 +296,157 @@ describe("IndianNFTExchange", function () {
       );
     });
   });
+
+  describe("Resell NFT", () => {
+    it("Should resell a NFT", async () => {
+      const { indianNFTExchange, owner, acc1, acc2 } = await loadFixture(
+        deployIndianNFTExchange
+      );
+
+      const listingPrice = await indianNFTExchange.getListingPrice();
+      const id = await indianNFTExchange
+        .connect(acc1)
+        .createINEItem(
+          "https://www.google.com",
+          ethers.utils.parseEther("0.05"),
+          {
+            value: listingPrice,
+          }
+        );
+
+      const item = await indianNFTExchange.getLatestINEItem();
+
+      const contractBalance = await ethers.provider.getBalance(
+        indianNFTExchange.address
+      );
+
+      expect(contractBalance).to.equal(listingPrice);
+
+      await indianNFTExchange.connect(acc2).buyINEItem(1, {
+        value: ethers.utils.parseEther("0.05"),
+      });
+
+      const item2 = await indianNFTExchange.getLatestINEItem();
+
+      expect(item2.id).to.equal(1);
+      expect(item2.creator).to.equal(acc1.address);
+      expect(item2.owner).to.equal(acc2.address);
+
+      await indianNFTExchange
+        .connect(acc2)
+        .resellINEItem(1, ethers.utils.parseEther("0.1"), {
+          value: listingPrice,
+        });
+
+      const item3 = await indianNFTExchange.getLatestINEItem();
+
+      expect(item3.id).to.equal(1);
+      expect(item3.creator).to.equal(acc1.address);
+      expect(item3.owner).to.equal(indianNFTExchange.address);
+      expect(item3.price).to.equal(ethers.utils.parseEther("0.1"));
+      expect(item3.tokenURI).to.equal("https://www.google.com");
+
+      const contractBalance2 = await ethers.provider.getBalance(
+        indianNFTExchange.address
+      );
+    });
+
+    it("Should not resell a NFT if price is not equal to listing price", async () => {
+      const { indianNFTExchange, owner, acc1 } = await loadFixture(
+        deployIndianNFTExchange
+      );
+
+      const listingPrice = await indianNFTExchange.getListingPrice();
+      const id = await indianNFTExchange
+        .connect(acc1)
+        .createINEItem(
+          "https://www.google.com",
+          ethers.utils.parseEther("0.05"),
+          {
+            value: listingPrice,
+          }
+        );
+
+      await expect(
+        indianNFTExchange
+          .connect(acc1)
+          .resellINEItem(1, ethers.utils.parseEther("0.1"), {
+            value: ethers.utils.parseEther("0.01"),
+          })
+      ).to.be.revertedWith("Price must be equal to listing price");
+    });
+
+    it("Should not resell a NFT if not owner", async () => {
+      const { indianNFTExchange, owner, acc1, acc2 } = await loadFixture(
+        deployIndianNFTExchange
+      );
+
+      const listingPrice = await indianNFTExchange.getListingPrice();
+      const id = await indianNFTExchange
+        .connect(acc1)
+        .createINEItem(
+          "https://www.google.com",
+          ethers.utils.parseEther("0.05"),
+          {
+            value: listingPrice,
+          }
+        );
+
+      await expect(
+        indianNFTExchange
+          .connect(acc2)
+          .resellINEItem(1, ethers.utils.parseEther("0.1"), {
+            value: listingPrice,
+          })
+      ).to.be.revertedWith(
+        "You must own this item in order to list it for sale"
+      );
+    });
+
+    it("Resell price Calculations", async () => {
+      const { indianNFTExchange, owner, acc1, acc2 } = await loadFixture(
+        deployIndianNFTExchange
+      );
+
+      const listingPrice = await indianNFTExchange.getListingPrice();
+
+      await indianNFTExchange
+        .connect(acc1)
+        .createINEItem(
+          "https://www.google.com",
+          ethers.utils.parseEther("0.05"),
+          {
+            value: listingPrice,
+          }
+        );
+
+      const acc1Balance = await ethers.provider.getBalance(acc1.address);
+
+      await indianNFTExchange.connect(acc2).buyINEItem(1, {
+        value: ethers.utils.parseEther("0.05"),
+      });
+
+      const price = ethers.utils.parseEther("0.1");
+
+      const sucessFee = ethers.utils
+        .parseEther("0.05")
+        .mul(SUCCESS_FEE)
+        .div(100);
+
+      const price2 = ethers.utils.parseEther("0.05").sub(sucessFee);
+      await indianNFTExchange.connect(acc2).resellINEItem(1, price, {
+        value: listingPrice,
+      });
+
+      await indianNFTExchange.connect(owner).buyINEItem(1, {
+        value: price,
+      });
+
+      const acc1Balance2 = await ethers.provider.getBalance(acc1.address);
+
+      const royaltyFee = price.mul(ROYALTY_FEE).div(100);
+
+      expect(acc1Balance2).to.equal(acc1Balance.add(royaltyFee).add(price2));
+    });
+  });
 });

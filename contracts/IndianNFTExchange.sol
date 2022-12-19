@@ -153,5 +153,33 @@ contract IndianNFTExchange is ERC721URIStorage, Ownable, ReentrancyGuard {
         payable(owner()).transfer(sucessFee);
 
         _itemsSold.increment();
+        _itemsListed.decrement();
+    }
+
+    function resellINEItem(uint256 INEItemId, uint256 price) public payable {
+        require(
+            msg.value == listingPrice,
+            "Price must be equal to listing price"
+        );
+
+        require(
+            INEItems[INEItemId].owner == msg.sender,
+            "You must own this item in order to list it for sale"
+        );
+        require(
+            INEItems[INEItemId].currentlyListed == false,
+            "This item is already for sale"
+        );
+        require(price > 0, "Price must be greater than 0");
+
+        INEItems[INEItemId].price = price;
+        INEItems[INEItemId].currentlyListed = true;
+        INEItems[INEItemId].seller = payable(msg.sender);
+        INEItems[INEItemId].owner = payable(address(this));
+
+        _itemsSold.decrement();
+        _itemsListed.increment();
+
+        _transfer(msg.sender, address(this), INEItemId);
     }
 }
