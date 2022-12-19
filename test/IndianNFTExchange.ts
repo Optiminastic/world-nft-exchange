@@ -7,8 +7,9 @@ const delay = (delayInms: number) => {
   return new Promise((resolve) => setTimeout(resolve, delayInms));
 };
 
-const ListingPrice = ethers.utils.parseEther("0.025");
-const SUCCESS_FEE = BigNumber.from("10");
+const LISTING_PRICE = ethers.utils.parseEther("0.025");
+const SUCCESS_FEE = BigNumber.from("5");
+const ROYALTY_FEE = BigNumber.from("3");
 
 describe("IndianNFTExchange", function () {
   const deployIndianNFTExchange = async () => {
@@ -35,7 +36,7 @@ describe("IndianNFTExchange", function () {
     it("Should return the listing price", async () => {
       const { indianNFTExchange } = await loadFixture(deployIndianNFTExchange);
       const listingPrice = await indianNFTExchange.getListingPrice();
-      expect(listingPrice).to.equal(ListingPrice);
+      expect(listingPrice).to.equal(LISTING_PRICE);
     });
 
     it("Should only be updated by owner", async () => {
@@ -196,6 +197,47 @@ describe("IndianNFTExchange", function () {
 
       expect(contractBalance).to.equal(listingPrice);
 
+      await indianNFTExchange.connect(acc2).buyINEItem(1, {
+        value: ethers.utils.parseEther("0.05"),
+      });
+
+      const item2 = await indianNFTExchange.getLatestINEItem();
+
+      expect(item2.id).to.equal(1);
+      expect(item2.creator).to.equal(acc1.address);
+      expect(item2.owner).to.equal(acc2.address);
+    });
+
+    it("Should check royalty fees and sucess fees", async () => {
+      const { indianNFTExchange, owner, acc1, acc2 } = await loadFixture(
+        deployIndianNFTExchange
+      );
+
+      const listingPrice = await indianNFTExchange.getListingPrice();
+      const id = await indianNFTExchange
+        .connect(acc1)
+        .createINEItem(
+          "https://www.google.com",
+          ethers.utils.parseEther("0.05"),
+          {
+            value: listingPrice,
+          }
+        );
+
+      const item = await indianNFTExchange.getLatestINEItem();
+
+      expect(item.id).to.equal(1);
+      expect(item.creator).to.equal(acc1.address);
+      expect(item.owner).to.equal(indianNFTExchange.address);
+      expect(item.price).to.equal(ethers.utils.parseEther("0.05"));
+      expect(item.tokenURI).to.equal("https://www.google.com");
+
+      const contractBalance = await ethers.provider.getBalance(
+        indianNFTExchange.address
+      );
+
+      expect(contractBalance).to.equal(listingPrice);
+
       const ownersInitialBalance = await ethers.provider.getBalance(
         owner.address
       );
@@ -225,9 +267,8 @@ describe("IndianNFTExchange", function () {
         .div(100);
 
       expect(ownerBalance).to.equal(
-        ownersInitialBalance.add(sucessFee).add(ListingPrice)
+        ownersInitialBalance.add(sucessFee).add(LISTING_PRICE)
       );
-      const acc1Balance = await ethers.provider.getBalance(acc1.address);
     });
 
     it("Should not buy a NFT if price is not equal to listing price", async () => {

@@ -18,7 +18,8 @@ contract IndianNFTExchange is ERC721URIStorage, Ownable, ReentrancyGuard {
     receive() external payable {}
 
     uint256 private listingPrice = 0.025 ether;
-    uint256 private successFeePercent = 10;
+    uint256 private successFeePercent = 5;
+    uint256 private royaltyFeePercent = 3;
 
     struct INEItem {
         uint256 id;
@@ -50,6 +51,18 @@ contract IndianNFTExchange is ERC721URIStorage, Ownable, ReentrancyGuard {
 
     function updateListingPrice(uint256 _listingPrice) public onlyOwner {
         listingPrice = _listingPrice;
+    }
+
+    function updateSuccessFeePercent(
+        uint256 _successFeePercent
+    ) public onlyOwner {
+        successFeePercent = _successFeePercent;
+    }
+
+    function updateRoyaltyFeePercent(
+        uint256 _royaltyFeePercent
+    ) public onlyOwner {
+        royaltyFeePercent = _royaltyFeePercent;
     }
 
     function getLatestINEItem() public view returns (INEItem memory) {
@@ -123,9 +136,19 @@ contract IndianNFTExchange is ERC721URIStorage, Ownable, ReentrancyGuard {
         INEItems[INEItemId].owner = payable(msg.sender);
 
         _transfer(address(this), msg.sender, INEItemId);
+        approve(address(this), INEItemId);
 
         uint256 sucessFee = (msg.value * successFeePercent) / 100;
-        INEItems[INEItemId].seller.transfer(msg.value - sucessFee);
+
+        uint256 priceToBePaid = msg.value - sucessFee;
+        if (INEItems[INEItemId].creator != INEItems[INEItemId].seller) {
+            uint256 creatorFee = (msg.value * royaltyFeePercent) / 100;
+            priceToBePaid = priceToBePaid - creatorFee;
+            INEItems[INEItemId].creator.transfer(creatorFee);
+        }
+
+        INEItems[INEItemId].seller.transfer(priceToBePaid);
+
         payable(owner()).transfer(listingPrice);
         payable(owner()).transfer(sucessFee);
 
