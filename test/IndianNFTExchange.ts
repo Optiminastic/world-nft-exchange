@@ -172,23 +172,20 @@ describe("IndianNFTExchange", function () {
         deployIndianNFTExchange
       );
 
+      const itemPrice = ethers.utils.parseEther("0.05");
       const listingPrice = await indianNFTExchange.getListingPrice();
       const id = await indianNFTExchange
         .connect(acc1)
-        .createINEItem(
-          "https://www.google.com",
-          ethers.utils.parseEther("0.05"),
-          {
-            value: listingPrice,
-          }
-        );
+        .createINEItem("https://www.google.com", itemPrice, {
+          value: listingPrice,
+        });
 
       const item = await indianNFTExchange.getLatestINEItem();
 
       expect(item.id).to.equal(1);
       expect(item.creator).to.equal(acc1.address);
       expect(item.owner).to.equal(indianNFTExchange.address);
-      expect(item.price).to.equal(ethers.utils.parseEther("0.05"));
+      expect(item.price).to.equal(itemPrice);
       expect(item.tokenURI).to.equal("https://www.google.com");
 
       const contractBalance = await ethers.provider.getBalance(
@@ -197,8 +194,13 @@ describe("IndianNFTExchange", function () {
 
       expect(contractBalance).to.equal(listingPrice);
 
+      const royaltyFee = await indianNFTExchange.getRoyaltyFeeForINEItem(1);
+      const successFee = await indianNFTExchange.getSuccessFeeForINEItem(1);
+
+      const priceToPay = itemPrice.add(royaltyFee).add(successFee);
+
       await indianNFTExchange.connect(acc2).buyINEItem(1, {
-        value: ethers.utils.parseEther("0.05"),
+        value: priceToPay,
       });
 
       const item2 = await indianNFTExchange.getLatestINEItem();
@@ -242,8 +244,14 @@ describe("IndianNFTExchange", function () {
         owner.address
       );
 
+      const price = ethers.utils.parseEther("0.05");
+      const royaltyFee = await indianNFTExchange.getRoyaltyFeeForINEItem(1);
+      const successFee = await indianNFTExchange.getSuccessFeeForINEItem(1);
+
+      const priceToPay = price.add(royaltyFee).add(successFee);
+
       const tx = await indianNFTExchange.connect(acc2).buyINEItem(1, {
-        value: ethers.utils.parseEther("0.05"),
+        value: priceToPay,
       });
 
       const reciept = await tx.wait();
@@ -261,13 +269,8 @@ describe("IndianNFTExchange", function () {
       expect(contractBalance2).to.equal(0);
       const ownerBalance = await ethers.provider.getBalance(owner.address);
 
-      const sucessFee = ethers.utils
-        .parseEther("0.05")
-        .mul(SUCCESS_FEE)
-        .div(100);
-
       expect(ownerBalance).to.equal(
-        ownersInitialBalance.add(sucessFee).add(LISTING_PRICE)
+        ownersInitialBalance.add(successFee).add(LISTING_PRICE)
       );
     });
 
@@ -322,8 +325,14 @@ describe("IndianNFTExchange", function () {
 
       expect(contractBalance).to.equal(listingPrice);
 
+      const price = ethers.utils.parseEther("0.05");
+      const royaltyFee = await indianNFTExchange.getRoyaltyFeeForINEItem(1);
+      const successFee = await indianNFTExchange.getSuccessFeeForINEItem(1);
+
+      const priceToPay = price.add(royaltyFee).add(successFee);
+
       await indianNFTExchange.connect(acc2).buyINEItem(1, {
-        value: ethers.utils.parseEther("0.05"),
+        value: priceToPay,
       });
 
       const item2 = await indianNFTExchange.getLatestINEItem();
@@ -422,31 +431,35 @@ describe("IndianNFTExchange", function () {
 
       const acc1Balance = await ethers.provider.getBalance(acc1.address);
 
+      const price = ethers.utils.parseEther("0.05");
+      const sucessFee = await indianNFTExchange.getSuccessFeeForINEItem(1);
+      const royaltyFee = await indianNFTExchange.getRoyaltyFeeForINEItem(1);
+
+      const priceToPay = price.add(sucessFee).add(royaltyFee);
+
       await indianNFTExchange.connect(acc2).buyINEItem(1, {
-        value: ethers.utils.parseEther("0.05"),
+        value: priceToPay,
       });
 
-      const price = ethers.utils.parseEther("0.1");
+      const price2 = ethers.utils.parseEther("0.1");
 
-      const sucessFee = ethers.utils
-        .parseEther("0.05")
-        .mul(SUCCESS_FEE)
-        .div(100);
-
-      const price2 = ethers.utils.parseEther("0.05").sub(sucessFee);
-      await indianNFTExchange.connect(acc2).resellINEItem(1, price, {
+      await indianNFTExchange.connect(acc2).resellINEItem(1, price2, {
         value: listingPrice,
       });
 
+      const successFee2 = await indianNFTExchange.getSuccessFeeForINEItem(1);
+      const royaltyFee2 = await indianNFTExchange.getRoyaltyFeeForINEItem(1);
+      const priceToPay2 = price2.add(successFee2).add(royaltyFee2);
+
       await indianNFTExchange.connect(owner).buyINEItem(1, {
-        value: price,
+        value: priceToPay2,
       });
 
       const acc1Balance2 = await ethers.provider.getBalance(acc1.address);
 
-      const royaltyFee = price.mul(ROYALTY_FEE).div(100);
-
-      expect(acc1Balance2).to.equal(acc1Balance.add(royaltyFee).add(price2));
+      expect(acc1Balance2).to.equal(
+        acc1Balance.add(price).add(royaltyFee).add(royaltyFee2)
+      );
     });
   });
 });

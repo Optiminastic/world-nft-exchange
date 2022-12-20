@@ -53,10 +53,18 @@ contract IndianNFTExchange is ERC721URIStorage, Ownable, ReentrancyGuard {
         listingPrice = _listingPrice;
     }
 
+    function getSuccessFeePercent() public view returns (uint256) {
+        return successFeePercent;
+    }
+
     function updateSuccessFeePercent(
         uint256 _successFeePercent
     ) public onlyOwner {
         successFeePercent = _successFeePercent;
+    }
+
+    function getRoyaltyFeePercent() public view returns (uint256) {
+        return royaltyFeePercent;
     }
 
     function updateRoyaltyFeePercent(
@@ -67,6 +75,28 @@ contract IndianNFTExchange is ERC721URIStorage, Ownable, ReentrancyGuard {
 
     function getLatestINEItem() public view returns (INEItem memory) {
         return INEItems[_tokenIds.current()];
+    }
+
+    function getINEItem(
+        uint256 INEItemId
+    ) public view returns (INEItem memory) {
+        return INEItems[INEItemId];
+    }
+
+    function getINEItemsListed() public view returns (uint256) {
+        return _itemsListed.current();
+    }
+
+    function getSuccessFeeForINEItem(
+        uint256 INEItemId
+    ) public view returns (uint256) {
+        return (INEItems[INEItemId].price * successFeePercent) / 100;
+    }
+
+    function getRoyaltyFeeForINEItem(
+        uint256 INEItemId
+    ) public view returns (uint256) {
+        return (INEItems[INEItemId].price * royaltyFeePercent) / 100;
     }
 
     function withdraw() public onlyOwner {
@@ -115,8 +145,13 @@ contract IndianNFTExchange is ERC721URIStorage, Ownable, ReentrancyGuard {
     }
 
     function buyINEItem(uint256 INEItemId) public payable {
+        uint256 price = INEItems[INEItemId].price;
+        uint256 sucessFee = (price * successFeePercent) / 100;
+        uint256 royaltyFee = (price * royaltyFeePercent) / 100;
+        uint256 totalPrice = price + sucessFee + royaltyFee;
+
         require(
-            msg.value == INEItems[INEItemId].price,
+            msg.value == totalPrice,
             "Please submit the asking price in order to complete the purchase"
         );
         require(
@@ -138,15 +173,15 @@ contract IndianNFTExchange is ERC721URIStorage, Ownable, ReentrancyGuard {
         _transfer(address(this), msg.sender, INEItemId);
         approve(address(this), INEItemId);
 
-        uint256 sucessFee = (msg.value * successFeePercent) / 100;
+        uint256 priceToBePaid = msg.value - sucessFee - royaltyFee;
 
-        uint256 priceToBePaid = msg.value - sucessFee;
-        if (INEItems[INEItemId].creator != INEItems[INEItemId].seller) {
-            uint256 creatorFee = (msg.value * royaltyFeePercent) / 100;
-            priceToBePaid = priceToBePaid - creatorFee;
-            INEItems[INEItemId].creator.transfer(creatorFee);
-        }
+        // if (INEItems[INEItemId].creator != INEItems[INEItemId].seller) {
+        //     uint256 creatorFee = (msg.value * royaltyFeePercent) / 100;
+        //     priceToBePaid = priceToBePaid - creatorFee;
+        //     INEItems[INEItemId].creator.transfer(creatorFee);
+        // }
 
+        INEItems[INEItemId].creator.transfer(royaltyFee);
         INEItems[INEItemId].seller.transfer(priceToBePaid);
 
         payable(owner()).transfer(listingPrice);
