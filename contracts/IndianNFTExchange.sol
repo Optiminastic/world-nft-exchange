@@ -4,7 +4,6 @@ pragma solidity 0.8.17;
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-import "@openzeppelin/contracts/security/PullPayment.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
@@ -102,6 +101,77 @@ contract IndianNFTExchange is ERC721URIStorage, Ownable, ReentrancyGuard {
     function withdraw() public onlyOwner {
         uint256 balance = address(this).balance;
         payable(msg.sender).transfer(balance);
+    }
+
+    function getAllINEItems() public view returns (INEItem[] memory) {
+        INEItem[] memory items = new INEItem[](_tokenIds.current());
+        for (uint256 i = 0; i < _tokenIds.current(); i++) {
+            items[i] = INEItems[i + 1];
+        }
+        return items;
+    }
+
+    function getAllINEItemsForSale() public view returns (INEItem[] memory) {
+        INEItem[] memory items = new INEItem[](_itemsListed.current());
+        uint256 counter = 0;
+        for (uint256 i = 0; i < _tokenIds.current(); i++) {
+            if (INEItems[i + 1].currentlyListed) {
+                items[counter] = INEItems[i + 1];
+                counter++;
+            }
+        }
+        return items;
+    }
+
+    function getAllINEItemsForSaleByOwner(
+        address owner
+    ) public view returns (INEItem[] memory) {
+        INEItem[] memory items = new INEItem[](_itemsListed.current());
+        uint256 counter = 0;
+        for (uint256 i = 0; i < _tokenIds.current(); i++) {
+            if (
+                INEItems[i + 1].currentlyListed &&
+                INEItems[i + 1].owner == owner
+            ) {
+                items[counter] = INEItems[i + 1];
+                counter++;
+            }
+        }
+        return items;
+    }
+
+    function getAllINEItemsForSaleBySeller(
+        address seller
+    ) public view returns (INEItem[] memory) {
+        INEItem[] memory items = new INEItem[](_itemsListed.current());
+        uint256 counter = 0;
+        for (uint256 i = 0; i < _tokenIds.current(); i++) {
+            if (
+                INEItems[i + 1].currentlyListed &&
+                INEItems[i + 1].seller == seller
+            ) {
+                items[counter] = INEItems[i + 1];
+                counter++;
+            }
+        }
+        return items;
+    }
+
+    function getAllINEItemsForSaleByCreator(
+        address creator
+    ) public view returns (INEItem[] memory) {
+        INEItem[] memory items = new INEItem[](_itemsListed.current());
+        uint256 counter = 0;
+        for (uint256 i = 0; i < _tokenIds.current(); i++) {
+            if (
+                INEItems[i + 1].currentlyListed &&
+                INEItems[i + 1].creator == creator
+            ) {
+                items[counter] = INEItems[i + 1];
+                counter++;
+            }
+        }
+        return items;
     }
 
     function createINEItem(
