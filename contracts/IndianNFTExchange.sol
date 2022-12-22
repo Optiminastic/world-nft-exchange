@@ -177,7 +177,7 @@ contract IndianNFTExchange is ERC721URIStorage, Ownable, ReentrancyGuard {
     function createINEItem(
         string memory tokenURI,
         uint256 price
-    ) public payable returns (uint256) {
+    ) public payable nonReentrant returns (uint256) {
         require(
             msg.value == listingPrice,
             "Price must be equal to listing price"
@@ -214,7 +214,7 @@ contract IndianNFTExchange is ERC721URIStorage, Ownable, ReentrancyGuard {
         return newItemId;
     }
 
-    function buyINEItem(uint256 INEItemId) public payable {
+    function buyINEItem(uint256 INEItemId) public payable nonReentrant {
         uint256 price = INEItems[INEItemId].price;
         uint256 sucessFee = (price * successFeePercent) / 100;
         uint256 royaltyFee = (price * royaltyFeePercent) / 100;
@@ -261,7 +261,10 @@ contract IndianNFTExchange is ERC721URIStorage, Ownable, ReentrancyGuard {
         _itemsListed.decrement();
     }
 
-    function resellINEItem(uint256 INEItemId, uint256 price) public payable {
+    function resellINEItem(
+        uint256 INEItemId,
+        uint256 price
+    ) public payable nonReentrant {
         require(
             msg.value == listingPrice,
             "Price must be equal to listing price"
