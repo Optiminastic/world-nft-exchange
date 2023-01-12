@@ -7,7 +7,7 @@ const delay = (delayInms: number) => {
   return new Promise((resolve) => setTimeout(resolve, delayInms));
 };
 
-const LISTING_PRICE = ethers.utils.parseEther("0.025");
+const LISTING_PRICE = ethers.utils.parseEther("0");
 const SUCCESS_FEE = BigNumber.from("5");
 const ROYALTY_FEE = BigNumber.from("3");
 
