@@ -1,15 +1,12 @@
 import { ethers } from "hardhat";
 import { expect } from "chai";
 import { loadFixture } from "@nomicfoundation/hardhat-network-helpers";
-import { BigNumber } from "ethers";
 
 const delay = (delayInms: number) => {
   return new Promise((resolve) => setTimeout(resolve, delayInms));
 };
 
 const LISTING_PRICE = ethers.utils.parseEther("0");
-const SUCCESS_FEE = BigNumber.from("5");
-const ROYALTY_FEE = BigNumber.from("3");
 
 describe("IndianNFTExchange", function () {
   const deployIndianNFTExchange = async () => {
