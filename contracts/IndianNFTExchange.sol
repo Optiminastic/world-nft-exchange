@@ -18,7 +18,7 @@ contract IndianNFTExchange is ERC721URIStorage, Ownable, ReentrancyGuard {
 
     uint256 private listingPrice = 0 ether;
     uint256 private successFeePercent = 0;
-    uint256 private royaltyFeePercent = 3;
+    uint256 private royaltyFeePercent = 1;
 
     struct INEItem {
         uint256 id;
