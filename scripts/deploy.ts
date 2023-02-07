@@ -4,6 +4,8 @@ async function main() {
   const INE = await ethers.getContractFactory("IndianNFTExchange");
   const ineInstance = await INE.deploy();
 
+  console.log("Deploying INE...");
+
   await ineInstance.deployed();
 
   console.log(`INE deployed to ${ineInstance.address}`);
