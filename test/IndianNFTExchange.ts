@@ -163,6 +163,35 @@ describe("IndianNFTExchange", function () {
     });
   });
 
+  describe("Checking NFT Price", () => {
+    it("Should return the NFT price", async () => {
+      const { indianNFTExchange, owner, acc1 } = await loadFixture(
+        deployIndianNFTExchange
+      );
+
+      const listingPrice = await indianNFTExchange.getListingPrice();
+      const id = await indianNFTExchange
+        .connect(acc1)
+        .createINEItem(
+          "https://www.google.com",
+          ethers.utils.parseEther("0.05"),
+          {
+            value: listingPrice,
+          }
+        );
+
+      const item = await indianNFTExchange.getLatestINEItem();
+      expect(item.price).to.equal(ethers.utils.parseEther("0.05"));
+
+      const successFee = await indianNFTExchange.getSuccessFeeForINEItem(1);
+      const royaltyFee = await indianNFTExchange.getRoyaltyFeeForINEItem(1);
+
+      const price = await indianNFTExchange.getINEItemPrice(1);
+
+      expect(price).to.equal(item.price.add(successFee).add(royaltyFee));
+    });
+  });
+
   describe("Buy NFT", () => {
     it("Should buy a NFT", async () => {
       const { indianNFTExchange, owner, acc1, acc2 } = await loadFixture(

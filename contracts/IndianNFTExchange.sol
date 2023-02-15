@@ -98,6 +98,13 @@ contract IndianNFTExchange is ERC721URIStorage, Ownable, ReentrancyGuard {
         return (INEItems[INEItemId].price * royaltyFeePercent) / 100;
     }
 
+    function getINEItemPrice(uint256 INEItemId) public view returns (uint256) {
+        return
+            INEItems[INEItemId].price +
+            getSuccessFeeForINEItem(INEItemId) +
+            getRoyaltyFeeForINEItem(INEItemId);
+    }
+
     function withdraw() public onlyOwner {
         uint256 balance = address(this).balance;
         payable(msg.sender).transfer(balance);
