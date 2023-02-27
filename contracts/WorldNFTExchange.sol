@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract IndianNFTExchange is ERC721URIStorage, Ownable, ReentrancyGuard {
+contract WorldNFTExchange is ERC721URIStorage, Ownable, ReentrancyGuard {
     using Counters for Counters.Counter;
 
     Counters.Counter private _tokenIds;
@@ -20,7 +20,7 @@ contract IndianNFTExchange is ERC721URIStorage, Ownable, ReentrancyGuard {
     uint256 private successFeePercent = 0;
     uint256 private royaltyFeePercent = 1;
 
-    struct INEItem {
+    struct Item {
         uint256 id;
         string tokenURI;
         uint256 price;
@@ -30,7 +30,7 @@ contract IndianNFTExchange is ERC721URIStorage, Ownable, ReentrancyGuard {
         bool currentlyListed;
     }
 
-    event INEItemCreated(
+    event ItemCreated(
         uint256 id,
         string tokenURI,
         uint256 price,
@@ -40,9 +40,9 @@ contract IndianNFTExchange is ERC721URIStorage, Ownable, ReentrancyGuard {
         bool currentlyListed
     );
 
-    mapping(uint256 => INEItem) private INEItems;
+    mapping(uint256 => Item) private Items;
 
-    constructor() ERC721("IndianNFTExchange", "INE") {}
+    constructor() ERC721("WorldNFTExchange", "") {}
 
     function getListingPrice() public view returns (uint256) {
         return listingPrice;
@@ -72,37 +72,35 @@ contract IndianNFTExchange is ERC721URIStorage, Ownable, ReentrancyGuard {
         royaltyFeePercent = _royaltyFeePercent;
     }
 
-    function getLatestINEItem() public view returns (INEItem memory) {
-        return INEItems[_tokenIds.current()];
+    function getLatestItem() public view returns (Item memory) {
+        return Items[_tokenIds.current()];
     }
 
-    function getINEItem(
-        uint256 INEItemId
-    ) public view returns (INEItem memory) {
-        return INEItems[INEItemId];
+    function getItem(uint256 ItemId) public view returns (Item memory) {
+        return Items[ItemId];
     }
 
-    function getINEItemsListed() public view returns (uint256) {
+    function getItemsListed() public view returns (uint256) {
         return _itemsListed.current();
     }
 
-    function getSuccessFeeForINEItem(
-        uint256 INEItemId
+    function getSuccessFeeForItem(
+        uint256 ItemId
     ) public view returns (uint256) {
-        return (INEItems[INEItemId].price * successFeePercent) / 100;
+        return (Items[ItemId].price * successFeePercent) / 100;
     }
 
-    function getRoyaltyFeeForINEItem(
-        uint256 INEItemId
+    function getRoyaltyFeeForItem(
+        uint256 ItemId
     ) public view returns (uint256) {
-        return (INEItems[INEItemId].price * royaltyFeePercent) / 100;
+        return (Items[ItemId].price * royaltyFeePercent) / 100;
     }
 
-    function getINEItemPrice(uint256 INEItemId) public view returns (uint256) {
+    function getItemPrice(uint256 ItemId) public view returns (uint256) {
         return
-            INEItems[INEItemId].price +
-            getSuccessFeeForINEItem(INEItemId) +
-            getRoyaltyFeeForINEItem(INEItemId);
+            Items[ItemId].price +
+            getSuccessFeeForItem(ItemId) +
+            getRoyaltyFeeForItem(ItemId);
     }
 
     function withdraw() public onlyOwner {
@@ -110,78 +108,71 @@ contract IndianNFTExchange is ERC721URIStorage, Ownable, ReentrancyGuard {
         payable(msg.sender).transfer(balance);
     }
 
-    function getAllINEItems() public view returns (INEItem[] memory) {
-        INEItem[] memory items = new INEItem[](_tokenIds.current());
+    function getAllItems() public view returns (Item[] memory) {
+        Item[] memory items = new Item[](_tokenIds.current());
         for (uint256 i = 0; i < _tokenIds.current(); i++) {
-            items[i] = INEItems[i + 1];
+            items[i] = Items[i + 1];
         }
         return items;
     }
 
-    function getAllINEItemsForSale() public view returns (INEItem[] memory) {
-        INEItem[] memory items = new INEItem[](_itemsListed.current());
+    function getAllItemsForSale() public view returns (Item[] memory) {
+        Item[] memory items = new Item[](_itemsListed.current());
         uint256 counter = 0;
         for (uint256 i = 0; i < _tokenIds.current(); i++) {
-            if (INEItems[i + 1].currentlyListed) {
-                items[counter] = INEItems[i + 1];
+            if (Items[i + 1].currentlyListed) {
+                items[counter] = Items[i + 1];
                 counter++;
             }
         }
         return items;
     }
 
-    function getAllINEItemsForSaleByOwner(
+    function getAllItemsForSaleByOwner(
         address owner
-    ) public view returns (INEItem[] memory) {
-        INEItem[] memory items = new INEItem[](_itemsListed.current());
+    ) public view returns (Item[] memory) {
+        Item[] memory items = new Item[](_itemsListed.current());
         uint256 counter = 0;
         for (uint256 i = 0; i < _tokenIds.current(); i++) {
-            if (
-                INEItems[i + 1].currentlyListed &&
-                INEItems[i + 1].owner == owner
-            ) {
-                items[counter] = INEItems[i + 1];
+            if (Items[i + 1].currentlyListed && Items[i + 1].owner == owner) {
+                items[counter] = Items[i + 1];
                 counter++;
             }
         }
         return items;
     }
 
-    function getAllINEItemsForSaleBySeller(
+    function getAllItemsForSaleBySeller(
         address seller
-    ) public view returns (INEItem[] memory) {
-        INEItem[] memory items = new INEItem[](_itemsListed.current());
+    ) public view returns (Item[] memory) {
+        Item[] memory items = new Item[](_itemsListed.current());
         uint256 counter = 0;
         for (uint256 i = 0; i < _tokenIds.current(); i++) {
-            if (
-                INEItems[i + 1].currentlyListed &&
-                INEItems[i + 1].seller == seller
-            ) {
-                items[counter] = INEItems[i + 1];
+            if (Items[i + 1].currentlyListed && Items[i + 1].seller == seller) {
+                items[counter] = Items[i + 1];
                 counter++;
             }
         }
         return items;
     }
 
-    function getAllINEItemsForSaleByCreator(
+    function getAllItemsForSaleByCreator(
         address creator
-    ) public view returns (INEItem[] memory) {
-        INEItem[] memory items = new INEItem[](_itemsListed.current());
+    ) public view returns (Item[] memory) {
+        Item[] memory items = new Item[](_itemsListed.current());
         uint256 counter = 0;
         for (uint256 i = 0; i < _tokenIds.current(); i++) {
             if (
-                INEItems[i + 1].currentlyListed &&
-                INEItems[i + 1].creator == creator
+                Items[i + 1].currentlyListed && Items[i + 1].creator == creator
             ) {
-                items[counter] = INEItems[i + 1];
+                items[counter] = Items[i + 1];
                 counter++;
             }
         }
         return items;
     }
 
-    function createINEItem(
+    function createItem(
         string memory tokenURI,
         uint256 price
     ) public payable nonReentrant returns (uint256) {
@@ -196,7 +187,7 @@ contract IndianNFTExchange is ERC721URIStorage, Ownable, ReentrancyGuard {
         _setTokenURI(newItemId, tokenURI);
         _itemsListed.increment();
 
-        INEItems[newItemId] = INEItem(
+        Items[newItemId] = Item(
             newItemId,
             tokenURI,
             price,
@@ -208,7 +199,7 @@ contract IndianNFTExchange is ERC721URIStorage, Ownable, ReentrancyGuard {
 
         _transfer(msg.sender, address(this), newItemId);
 
-        emit INEItemCreated(
+        emit ItemCreated(
             newItemId,
             tokenURI,
             price,
@@ -221,8 +212,8 @@ contract IndianNFTExchange is ERC721URIStorage, Ownable, ReentrancyGuard {
         return newItemId;
     }
 
-    function buyINEItem(uint256 INEItemId) public payable nonReentrant {
-        uint256 price = INEItems[INEItemId].price;
+    function buyItem(uint256 ItemId) public payable nonReentrant {
+        uint256 price = Items[ItemId].price;
         uint256 sucessFee = (price * successFeePercent) / 100;
         uint256 royaltyFee = (price * royaltyFeePercent) / 100;
         uint256 totalPrice = price + sucessFee + royaltyFee;
@@ -232,34 +223,34 @@ contract IndianNFTExchange is ERC721URIStorage, Ownable, ReentrancyGuard {
             "Please submit the asking price in order to complete the purchase"
         );
         require(
-            INEItems[INEItemId].currentlyListed == true,
+            Items[ItemId].currentlyListed == true,
             "This item is not currently for sale"
         );
         require(
-            INEItems[INEItemId].owner == address(this),
+            Items[ItemId].owner == address(this),
             "This item is not currently for sale"
         );
         require(
-            INEItems[INEItemId].seller != msg.sender,
+            Items[ItemId].seller != msg.sender,
             "You cannot buy your own item"
         );
 
-        INEItems[INEItemId].currentlyListed = false;
-        INEItems[INEItemId].owner = payable(msg.sender);
+        Items[ItemId].currentlyListed = false;
+        Items[ItemId].owner = payable(msg.sender);
 
-        _transfer(address(this), msg.sender, INEItemId);
-        approve(address(this), INEItemId);
+        _transfer(address(this), msg.sender, ItemId);
+        approve(address(this), ItemId);
 
         uint256 priceToBePaid = msg.value - sucessFee - royaltyFee;
 
-        // if (INEItems[INEItemId].creator != INEItems[INEItemId].seller) {
+        // if (Items[ItemId].creator != Items[ItemId].seller) {
         //     uint256 creatorFee = (msg.value * royaltyFeePercent) / 100;
         //     priceToBePaid = priceToBePaid - creatorFee;
-        //     INEItems[INEItemId].creator.transfer(creatorFee);
+        //     Items[ItemId].creator.transfer(creatorFee);
         // }
 
-        INEItems[INEItemId].creator.transfer(royaltyFee);
-        INEItems[INEItemId].seller.transfer(priceToBePaid);
+        Items[ItemId].creator.transfer(royaltyFee);
+        Items[ItemId].seller.transfer(priceToBePaid);
 
         payable(owner()).transfer(listingPrice);
         payable(owner()).transfer(sucessFee);
@@ -268,8 +259,8 @@ contract IndianNFTExchange is ERC721URIStorage, Ownable, ReentrancyGuard {
         _itemsListed.decrement();
     }
 
-    function resellINEItem(
-        uint256 INEItemId,
+    function resellItem(
+        uint256 ItemId,
         uint256 price
     ) public payable nonReentrant {
         require(
@@ -278,23 +269,23 @@ contract IndianNFTExchange is ERC721URIStorage, Ownable, ReentrancyGuard {
         );
 
         require(
-            INEItems[INEItemId].owner == msg.sender,
+            Items[ItemId].owner == msg.sender,
             "You must own this item in order to list it for sale"
         );
         require(
-            INEItems[INEItemId].currentlyListed == false,
+            Items[ItemId].currentlyListed == false,
             "This item is already for sale"
         );
         require(price > 0, "Price must be greater than 0");
 
-        INEItems[INEItemId].price = price;
-        INEItems[INEItemId].currentlyListed = true;
-        INEItems[INEItemId].seller = payable(msg.sender);
-        INEItems[INEItemId].owner = payable(address(this));
+        Items[ItemId].price = price;
+        Items[ItemId].currentlyListed = true;
+        Items[ItemId].seller = payable(msg.sender);
+        Items[ItemId].owner = payable(address(this));
 
         _itemsSold.decrement();
         _itemsListed.increment();
 
-        _transfer(msg.sender, address(this), INEItemId);
+        _transfer(msg.sender, address(this), ItemId);
     }
 }

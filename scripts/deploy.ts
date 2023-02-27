@@ -1,14 +1,14 @@
 import { ethers } from "hardhat";
 
 async function main() {
-  const INE = await ethers.getContractFactory("IndianNFTExchange");
-  const ineInstance = await INE.deploy();
+  const WNE = await ethers.getContractFactory("WorldNFTExchange");
+  const wneInstance = await WNE.deploy();
 
-  console.log("Deploying INE...");
+  console.log("Deploying WNE...");
 
-  await ineInstance.deployed();
+  await wneInstance.deployed();
 
-  console.log(`INE deployed to ${ineInstance.address}`);
+  console.log(`WNE deployed to ${wneInstance.address}`);
 }
 
 // We recommend this pattern to be able to use async/await everywhere
