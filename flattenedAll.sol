@@ -1,5 +1,5 @@
-// SPDX-License-Identifier: MIXED
 // Sources flattened with hardhat v2.12.3 https://hardhat.org
+// SPDX-License-Identifier: MIXED
 // File @openzeppelin/contracts/utils/Counters.sol@v4.8.0
 
 // License-Identifier: MIT
@@ -43,6 +43,78 @@ library Counters {
 
     function reset(Counter storage counter) internal {
         counter._value = 0;
+    }
+}
+
+// File @openzeppelin/contracts/security/ReentrancyGuard.sol@v4.8.0
+
+// License-Identifier: MIT
+// OpenZeppelin Contracts (last updated v4.8.0) (security/ReentrancyGuard.sol)
+
+pragma solidity ^0.8.0;
+
+/**
+ * @dev Contract module that helps prevent reentrant calls to a function.
+ *
+ * Inheriting from `ReentrancyGuard` will make the {nonReentrant} modifier
+ * available, which can be applied to functions to make sure there are no nested
+ * (reentrant) calls to them.
+ *
+ * Note that because there is a single `nonReentrant` guard, functions marked as
+ * `nonReentrant` may not call one another. This can be worked around by making
+ * those functions `private`, and then adding `external` `nonReentrant` entry
+ * points to them.
+ *
+ * TIP: If you would like to learn more about reentrancy and alternative ways
+ * to protect against it, check out our blog post
+ * https://blog.openzeppelin.com/reentrancy-after-istanbul/[Reentrancy After Istanbul].
+ */
+abstract contract ReentrancyGuard {
+    // Booleans are more expensive than uint256 or any type that takes up a full
+    // word because each write operation emits an extra SLOAD to first read the
+    // slot's contents, replace the bits taken up by the boolean, and then write
+    // back. This is the compiler's defense against contract upgrades and
+    // pointer aliasing, and it cannot be disabled.
+
+    // The values being non-zero value makes deployment a bit more expensive,
+    // but in exchange the refund on every call to nonReentrant will be lower in
+    // amount. Since refunds are capped to a percentage of the total
+    // transaction's gas, it is best to keep them low in cases like this one, to
+    // increase the likelihood of the full refund coming into effect.
+    uint256 private constant _NOT_ENTERED = 1;
+    uint256 private constant _ENTERED = 2;
+
+    uint256 private _status;
+
+    constructor() {
+        _status = _NOT_ENTERED;
+    }
+
+    /**
+     * @dev Prevents a contract from calling itself, directly or indirectly.
+     * Calling a `nonReentrant` function from another `nonReentrant`
+     * function is not supported. It is possible to prevent this from happening
+     * by making the `nonReentrant` function external, and making it call a
+     * `private` function that does the actual work.
+     */
+    modifier nonReentrant() {
+        _nonReentrantBefore();
+        _;
+        _nonReentrantAfter();
+    }
+
+    function _nonReentrantBefore() private {
+        // On the first call to nonReentrant, _status will be _NOT_ENTERED
+        require(_status != _ENTERED, "ReentrancyGuard: reentrant call");
+
+        // Any calls to nonReentrant after this point will fail
+        _status = _ENTERED;
+    }
+
+    function _nonReentrantAfter() private {
+        // By storing the original value once again, a refund is triggered (see
+        // https://eips.ethereum.org/EIPS/eip-2200)
+        _status = _NOT_ENTERED;
     }
 }
 
@@ -160,6 +232,316 @@ abstract contract Ownable is Context {
         address oldOwner = _owner;
         _owner = newOwner;
         emit OwnershipTransferred(oldOwner, newOwner);
+    }
+}
+
+// File @openzeppelin/contracts/utils/Address.sol@v4.8.0
+
+// License-Identifier: MIT
+// OpenZeppelin Contracts (last updated v4.8.0) (utils/Address.sol)
+
+pragma solidity ^0.8.1;
+
+/**
+ * @dev Collection of functions related to the address type
+ */
+library Address {
+    /**
+     * @dev Returns true if `account` is a contract.
+     *
+     * [IMPORTANT]
+     * ====
+     * It is unsafe to assume that an address for which this function returns
+     * false is an externally-owned account (EOA) and not a contract.
+     *
+     * Among others, `isContract` will return false for the following
+     * types of addresses:
+     *
+     *  - an externally-owned account
+     *  - a contract in construction
+     *  - an address where a contract will be created
+     *  - an address where a contract lived, but was destroyed
+     * ====
+     *
+     * [IMPORTANT]
+     * ====
+     * You shouldn't rely on `isContract` to protect against flash loan attacks!
+     *
+     * Preventing calls from contracts is highly discouraged. It breaks composability, breaks support for smart wallets
+     * like Gnosis Safe, and does not provide security since it can be circumvented by calling from a contract
+     * constructor.
+     * ====
+     */
+    function isContract(address account) internal view returns (bool) {
+        // This method relies on extcodesize/address.code.length, which returns 0
+        // for contracts in construction, since the code is only stored at the end
+        // of the constructor execution.
+
+        return account.code.length > 0;
+    }
+
+    /**
+     * @dev Replacement for Solidity's `transfer`: sends `amount` wei to
+     * `recipient`, forwarding all available gas and reverting on errors.
+     *
+     * https://eips.ethereum.org/EIPS/eip-1884[EIP1884] increases the gas cost
+     * of certain opcodes, possibly making contracts go over the 2300 gas limit
+     * imposed by `transfer`, making them unable to receive funds via
+     * `transfer`. {sendValue} removes this limitation.
+     *
+     * https://diligence.consensys.net/posts/2019/09/stop-using-soliditys-transfer-now/[Learn more].
+     *
+     * IMPORTANT: because control is transferred to `recipient`, care must be
+     * taken to not create reentrancy vulnerabilities. Consider using
+     * {ReentrancyGuard} or the
+     * https://solidity.readthedocs.io/en/v0.5.11/security-considerations.html#use-the-checks-effects-interactions-pattern[checks-effects-interactions pattern].
+     */
+    function sendValue(address payable recipient, uint256 amount) internal {
+        require(
+            address(this).balance >= amount,
+            "Address: insufficient balance"
+        );
+
+        (bool success, ) = recipient.call{value: amount}("");
+        require(
+            success,
+            "Address: unable to send value, recipient may have reverted"
+        );
+    }
+
+    /**
+     * @dev Performs a Solidity function call using a low level `call`. A
+     * plain `call` is an unsafe replacement for a function call: use this
+     * function instead.
+     *
+     * If `target` reverts with a revert reason, it is bubbled up by this
+     * function (like regular Solidity function calls).
+     *
+     * Returns the raw returned data. To convert to the expected return value,
+     * use https://solidity.readthedocs.io/en/latest/units-and-global-variables.html?highlight=abi.decode#abi-encoding-and-decoding-functions[`abi.decode`].
+     *
+     * Requirements:
+     *
+     * - `target` must be a contract.
+     * - calling `target` with `data` must not revert.
+     *
+     * _Available since v3.1._
+     */
+    function functionCall(
+        address target,
+        bytes memory data
+    ) internal returns (bytes memory) {
+        return
+            functionCallWithValue(
+                target,
+                data,
+                0,
+                "Address: low-level call failed"
+            );
+    }
+
+    /**
+     * @dev Same as {xref-Address-functionCall-address-bytes-}[`functionCall`], but with
+     * `errorMessage` as a fallback revert reason when `target` reverts.
+     *
+     * _Available since v3.1._
+     */
+    function functionCall(
+        address target,
+        bytes memory data,
+        string memory errorMessage
+    ) internal returns (bytes memory) {
+        return functionCallWithValue(target, data, 0, errorMessage);
+    }
+
+    /**
+     * @dev Same as {xref-Address-functionCall-address-bytes-}[`functionCall`],
+     * but also transferring `value` wei to `target`.
+     *
+     * Requirements:
+     *
+     * - the calling contract must have an ETH balance of at least `value`.
+     * - the called Solidity function must be `payable`.
+     *
+     * _Available since v3.1._
+     */
+    function functionCallWithValue(
+        address target,
+        bytes memory data,
+        uint256 value
+    ) internal returns (bytes memory) {
+        return
+            functionCallWithValue(
+                target,
+                data,
+                value,
+                "Address: low-level call with value failed"
+            );
+    }
+
+    /**
+     * @dev Same as {xref-Address-functionCallWithValue-address-bytes-uint256-}[`functionCallWithValue`], but
+     * with `errorMessage` as a fallback revert reason when `target` reverts.
+     *
+     * _Available since v3.1._
+     */
+    function functionCallWithValue(
+        address target,
+        bytes memory data,
+        uint256 value,
+        string memory errorMessage
+    ) internal returns (bytes memory) {
+        require(
+            address(this).balance >= value,
+            "Address: insufficient balance for call"
+        );
+        (bool success, bytes memory returndata) = target.call{value: value}(
+            data
+        );
+        return
+            verifyCallResultFromTarget(
+                target,
+                success,
+                returndata,
+                errorMessage
+            );
+    }
+
+    /**
+     * @dev Same as {xref-Address-functionCall-address-bytes-}[`functionCall`],
+     * but performing a static call.
+     *
+     * _Available since v3.3._
+     */
+    function functionStaticCall(
+        address target,
+        bytes memory data
+    ) internal view returns (bytes memory) {
+        return
+            functionStaticCall(
+                target,
+                data,
+                "Address: low-level static call failed"
+            );
+    }
+
+    /**
+     * @dev Same as {xref-Address-functionCall-address-bytes-string-}[`functionCall`],
+     * but performing a static call.
+     *
+     * _Available since v3.3._
+     */
+    function functionStaticCall(
+        address target,
+        bytes memory data,
+        string memory errorMessage
+    ) internal view returns (bytes memory) {
+        (bool success, bytes memory returndata) = target.staticcall(data);
+        return
+            verifyCallResultFromTarget(
+                target,
+                success,
+                returndata,
+                errorMessage
+            );
+    }
+
+    /**
+     * @dev Same as {xref-Address-functionCall-address-bytes-}[`functionCall`],
+     * but performing a delegate call.
+     *
+     * _Available since v3.4._
+     */
+    function functionDelegateCall(
+        address target,
+        bytes memory data
+    ) internal returns (bytes memory) {
+        return
+            functionDelegateCall(
+                target,
+                data,
+                "Address: low-level delegate call failed"
+            );
+    }
+
+    /**
+     * @dev Same as {xref-Address-functionCall-address-bytes-string-}[`functionCall`],
+     * but performing a delegate call.
+     *
+     * _Available since v3.4._
+     */
+    function functionDelegateCall(
+        address target,
+        bytes memory data,
+        string memory errorMessage
+    ) internal returns (bytes memory) {
+        (bool success, bytes memory returndata) = target.delegatecall(data);
+        return
+            verifyCallResultFromTarget(
+                target,
+                success,
+                returndata,
+                errorMessage
+            );
+    }
+
+    /**
+     * @dev Tool to verify that a low level call to smart-contract was successful, and revert (either by bubbling
+     * the revert reason or using the provided one) in case of unsuccessful call or if target was not a contract.
+     *
+     * _Available since v4.8._
+     */
+    function verifyCallResultFromTarget(
+        address target,
+        bool success,
+        bytes memory returndata,
+        string memory errorMessage
+    ) internal view returns (bytes memory) {
+        if (success) {
+            if (returndata.length == 0) {
+                // only check isContract if the call was successful and the return data is empty
+                // otherwise we already know that it was a contract
+                require(isContract(target), "Address: call to non-contract");
+            }
+            return returndata;
+        } else {
+            _revert(returndata, errorMessage);
+        }
+    }
+
+    /**
+     * @dev Tool to verify that a low level call was successful, and revert if it wasn't, either by bubbling the
+     * revert reason or using the provided one.
+     *
+     * _Available since v4.3._
+     */
+    function verifyCallResult(
+        bool success,
+        bytes memory returndata,
+        string memory errorMessage
+    ) internal pure returns (bytes memory) {
+        if (success) {
+            return returndata;
+        } else {
+            _revert(returndata, errorMessage);
+        }
+    }
+
+    function _revert(
+        bytes memory returndata,
+        string memory errorMessage
+    ) private pure {
+        // Look for revert reason and bubble it up if present
+        if (returndata.length > 0) {
+            // The easiest way to bubble the revert reason is using memory via assembly
+            /// @solidity memory-safe-assembly
+            assembly {
+                let returndata_size := mload(returndata)
+                revert(add(32, returndata), returndata_size)
+            }
+        } else {
+            revert(errorMessage);
+        }
     }
 }
 
@@ -602,316 +984,6 @@ library Strings {
      */
     function toHexString(address addr) internal pure returns (string memory) {
         return toHexString(uint256(uint160(addr)), _ADDRESS_LENGTH);
-    }
-}
-
-// File @openzeppelin/contracts/utils/Address.sol@v4.8.0
-
-// License-Identifier: MIT
-// OpenZeppelin Contracts (last updated v4.8.0) (utils/Address.sol)
-
-pragma solidity ^0.8.1;
-
-/**
- * @dev Collection of functions related to the address type
- */
-library Address {
-    /**
-     * @dev Returns true if `account` is a contract.
-     *
-     * [IMPORTANT]
-     * ====
-     * It is unsafe to assume that an address for which this function returns
-     * false is an externally-owned account (EOA) and not a contract.
-     *
-     * Among others, `isContract` will return false for the following
-     * types of addresses:
-     *
-     *  - an externally-owned account
-     *  - a contract in construction
-     *  - an address where a contract will be created
-     *  - an address where a contract lived, but was destroyed
-     * ====
-     *
-     * [IMPORTANT]
-     * ====
-     * You shouldn't rely on `isContract` to protect against flash loan attacks!
-     *
-     * Preventing calls from contracts is highly discouraged. It breaks composability, breaks support for smart wallets
-     * like Gnosis Safe, and does not provide security since it can be circumvented by calling from a contract
-     * constructor.
-     * ====
-     */
-    function isContract(address account) internal view returns (bool) {
-        // This method relies on extcodesize/address.code.length, which returns 0
-        // for contracts in construction, since the code is only stored at the end
-        // of the constructor execution.
-
-        return account.code.length > 0;
-    }
-
-    /**
-     * @dev Replacement for Solidity's `transfer`: sends `amount` wei to
-     * `recipient`, forwarding all available gas and reverting on errors.
-     *
-     * https://eips.ethereum.org/EIPS/eip-1884[EIP1884] increases the gas cost
-     * of certain opcodes, possibly making contracts go over the 2300 gas limit
-     * imposed by `transfer`, making them unable to receive funds via
-     * `transfer`. {sendValue} removes this limitation.
-     *
-     * https://diligence.consensys.net/posts/2019/09/stop-using-soliditys-transfer-now/[Learn more].
-     *
-     * IMPORTANT: because control is transferred to `recipient`, care must be
-     * taken to not create reentrancy vulnerabilities. Consider using
-     * {ReentrancyGuard} or the
-     * https://solidity.readthedocs.io/en/v0.5.11/security-considerations.html#use-the-checks-effects-interactions-pattern[checks-effects-interactions pattern].
-     */
-    function sendValue(address payable recipient, uint256 amount) internal {
-        require(
-            address(this).balance >= amount,
-            "Address: insufficient balance"
-        );
-
-        (bool success, ) = recipient.call{value: amount}("");
-        require(
-            success,
-            "Address: unable to send value, recipient may have reverted"
-        );
-    }
-
-    /**
-     * @dev Performs a Solidity function call using a low level `call`. A
-     * plain `call` is an unsafe replacement for a function call: use this
-     * function instead.
-     *
-     * If `target` reverts with a revert reason, it is bubbled up by this
-     * function (like regular Solidity function calls).
-     *
-     * Returns the raw returned data. To convert to the expected return value,
-     * use https://solidity.readthedocs.io/en/latest/units-and-global-variables.html?highlight=abi.decode#abi-encoding-and-decoding-functions[`abi.decode`].
-     *
-     * Requirements:
-     *
-     * - `target` must be a contract.
-     * - calling `target` with `data` must not revert.
-     *
-     * _Available since v3.1._
-     */
-    function functionCall(
-        address target,
-        bytes memory data
-    ) internal returns (bytes memory) {
-        return
-            functionCallWithValue(
-                target,
-                data,
-                0,
-                "Address: low-level call failed"
-            );
-    }
-
-    /**
-     * @dev Same as {xref-Address-functionCall-address-bytes-}[`functionCall`], but with
-     * `errorMessage` as a fallback revert reason when `target` reverts.
-     *
-     * _Available since v3.1._
-     */
-    function functionCall(
-        address target,
-        bytes memory data,
-        string memory errorMessage
-    ) internal returns (bytes memory) {
-        return functionCallWithValue(target, data, 0, errorMessage);
-    }
-
-    /**
-     * @dev Same as {xref-Address-functionCall-address-bytes-}[`functionCall`],
-     * but also transferring `value` wei to `target`.
-     *
-     * Requirements:
-     *
-     * - the calling contract must have an ETH balance of at least `value`.
-     * - the called Solidity function must be `payable`.
-     *
-     * _Available since v3.1._
-     */
-    function functionCallWithValue(
-        address target,
-        bytes memory data,
-        uint256 value
-    ) internal returns (bytes memory) {
-        return
-            functionCallWithValue(
-                target,
-                data,
-                value,
-                "Address: low-level call with value failed"
-            );
-    }
-
-    /**
-     * @dev Same as {xref-Address-functionCallWithValue-address-bytes-uint256-}[`functionCallWithValue`], but
-     * with `errorMessage` as a fallback revert reason when `target` reverts.
-     *
-     * _Available since v3.1._
-     */
-    function functionCallWithValue(
-        address target,
-        bytes memory data,
-        uint256 value,
-        string memory errorMessage
-    ) internal returns (bytes memory) {
-        require(
-            address(this).balance >= value,
-            "Address: insufficient balance for call"
-        );
-        (bool success, bytes memory returndata) = target.call{value: value}(
-            data
-        );
-        return
-            verifyCallResultFromTarget(
-                target,
-                success,
-                returndata,
-                errorMessage
-            );
-    }
-
-    /**
-     * @dev Same as {xref-Address-functionCall-address-bytes-}[`functionCall`],
-     * but performing a static call.
-     *
-     * _Available since v3.3._
-     */
-    function functionStaticCall(
-        address target,
-        bytes memory data
-    ) internal view returns (bytes memory) {
-        return
-            functionStaticCall(
-                target,
-                data,
-                "Address: low-level static call failed"
-            );
-    }
-
-    /**
-     * @dev Same as {xref-Address-functionCall-address-bytes-string-}[`functionCall`],
-     * but performing a static call.
-     *
-     * _Available since v3.3._
-     */
-    function functionStaticCall(
-        address target,
-        bytes memory data,
-        string memory errorMessage
-    ) internal view returns (bytes memory) {
-        (bool success, bytes memory returndata) = target.staticcall(data);
-        return
-            verifyCallResultFromTarget(
-                target,
-                success,
-                returndata,
-                errorMessage
-            );
-    }
-
-    /**
-     * @dev Same as {xref-Address-functionCall-address-bytes-}[`functionCall`],
-     * but performing a delegate call.
-     *
-     * _Available since v3.4._
-     */
-    function functionDelegateCall(
-        address target,
-        bytes memory data
-    ) internal returns (bytes memory) {
-        return
-            functionDelegateCall(
-                target,
-                data,
-                "Address: low-level delegate call failed"
-            );
-    }
-
-    /**
-     * @dev Same as {xref-Address-functionCall-address-bytes-string-}[`functionCall`],
-     * but performing a delegate call.
-     *
-     * _Available since v3.4._
-     */
-    function functionDelegateCall(
-        address target,
-        bytes memory data,
-        string memory errorMessage
-    ) internal returns (bytes memory) {
-        (bool success, bytes memory returndata) = target.delegatecall(data);
-        return
-            verifyCallResultFromTarget(
-                target,
-                success,
-                returndata,
-                errorMessage
-            );
-    }
-
-    /**
-     * @dev Tool to verify that a low level call to smart-contract was successful, and revert (either by bubbling
-     * the revert reason or using the provided one) in case of unsuccessful call or if target was not a contract.
-     *
-     * _Available since v4.8._
-     */
-    function verifyCallResultFromTarget(
-        address target,
-        bool success,
-        bytes memory returndata,
-        string memory errorMessage
-    ) internal view returns (bytes memory) {
-        if (success) {
-            if (returndata.length == 0) {
-                // only check isContract if the call was successful and the return data is empty
-                // otherwise we already know that it was a contract
-                require(isContract(target), "Address: call to non-contract");
-            }
-            return returndata;
-        } else {
-            _revert(returndata, errorMessage);
-        }
-    }
-
-    /**
-     * @dev Tool to verify that a low level call was successful, and revert if it wasn't, either by bubbling the
-     * revert reason or using the provided one.
-     *
-     * _Available since v4.3._
-     */
-    function verifyCallResult(
-        bool success,
-        bytes memory returndata,
-        string memory errorMessage
-    ) internal pure returns (bytes memory) {
-        if (success) {
-            return returndata;
-        } else {
-            _revert(returndata, errorMessage);
-        }
-    }
-
-    function _revert(
-        bytes memory returndata,
-        string memory errorMessage
-    ) private pure {
-        // Look for revert reason and bubble it up if present
-        if (returndata.length > 0) {
-            // The easiest way to bubble the revert reason is using memory via assembly
-            /// @solidity memory-safe-assembly
-            assembly {
-                let returndata_size := mload(returndata)
-                revert(add(32, returndata), returndata_size)
-            }
-        } else {
-            revert(errorMessage);
-        }
     }
 }
 
@@ -1812,84 +1884,12 @@ abstract contract ERC721URIStorage is ERC721 {
     }
 }
 
-// File @openzeppelin/contracts/security/ReentrancyGuard.sol@v4.8.0
-
-// License-Identifier: MIT
-// OpenZeppelin Contracts (last updated v4.8.0) (security/ReentrancyGuard.sol)
-
-pragma solidity ^0.8.0;
-
-/**
- * @dev Contract module that helps prevent reentrant calls to a function.
- *
- * Inheriting from `ReentrancyGuard` will make the {nonReentrant} modifier
- * available, which can be applied to functions to make sure there are no nested
- * (reentrant) calls to them.
- *
- * Note that because there is a single `nonReentrant` guard, functions marked as
- * `nonReentrant` may not call one another. This can be worked around by making
- * those functions `private`, and then adding `external` `nonReentrant` entry
- * points to them.
- *
- * TIP: If you would like to learn more about reentrancy and alternative ways
- * to protect against it, check out our blog post
- * https://blog.openzeppelin.com/reentrancy-after-istanbul/[Reentrancy After Istanbul].
- */
-abstract contract ReentrancyGuard {
-    // Booleans are more expensive than uint256 or any type that takes up a full
-    // word because each write operation emits an extra SLOAD to first read the
-    // slot's contents, replace the bits taken up by the boolean, and then write
-    // back. This is the compiler's defense against contract upgrades and
-    // pointer aliasing, and it cannot be disabled.
-
-    // The values being non-zero value makes deployment a bit more expensive,
-    // but in exchange the refund on every call to nonReentrant will be lower in
-    // amount. Since refunds are capped to a percentage of the total
-    // transaction's gas, it is best to keep them low in cases like this one, to
-    // increase the likelihood of the full refund coming into effect.
-    uint256 private constant _NOT_ENTERED = 1;
-    uint256 private constant _ENTERED = 2;
-
-    uint256 private _status;
-
-    constructor() {
-        _status = _NOT_ENTERED;
-    }
-
-    /**
-     * @dev Prevents a contract from calling itself, directly or indirectly.
-     * Calling a `nonReentrant` function from another `nonReentrant`
-     * function is not supported. It is possible to prevent this from happening
-     * by making the `nonReentrant` function external, and making it call a
-     * `private` function that does the actual work.
-     */
-    modifier nonReentrant() {
-        _nonReentrantBefore();
-        _;
-        _nonReentrantAfter();
-    }
-
-    function _nonReentrantBefore() private {
-        // On the first call to nonReentrant, _status will be _NOT_ENTERED
-        require(_status != _ENTERED, "ReentrancyGuard: reentrant call");
-
-        // Any calls to nonReentrant after this point will fail
-        _status = _ENTERED;
-    }
-
-    function _nonReentrantAfter() private {
-        // By storing the original value once again, a refund is triggered (see
-        // https://eips.ethereum.org/EIPS/eip-2200)
-        _status = _NOT_ENTERED;
-    }
-}
-
-// File contracts/IndianNFTExchange.sol
+// File contracts/WorldNFTExchange.sol
 
 // License-Identifier: MIT
 pragma solidity 0.8.17;
 
-contract IndianNFTExchange is ERC721URIStorage, Ownable, ReentrancyGuard {
+contract WorldNFTExchange is ERC721URIStorage, Ownable, ReentrancyGuard {
     using Counters for Counters.Counter;
 
     Counters.Counter private _tokenIds;
@@ -1902,7 +1902,7 @@ contract IndianNFTExchange is ERC721URIStorage, Ownable, ReentrancyGuard {
     uint256 private successFeePercent = 0;
     uint256 private royaltyFeePercent = 1;
 
-    struct INEItem {
+    struct Item {
         uint256 id;
         string tokenURI;
         uint256 price;
@@ -1912,7 +1912,7 @@ contract IndianNFTExchange is ERC721URIStorage, Ownable, ReentrancyGuard {
         bool currentlyListed;
     }
 
-    event INEItemCreated(
+    event ItemCreated(
         uint256 id,
         string tokenURI,
         uint256 price,
@@ -1922,9 +1922,9 @@ contract IndianNFTExchange is ERC721URIStorage, Ownable, ReentrancyGuard {
         bool currentlyListed
     );
 
-    mapping(uint256 => INEItem) private INEItems;
+    mapping(uint256 => Item) private Items;
 
-    constructor() ERC721("IndianNFTExchange", "INE") {}
+    constructor() ERC721("WorldNFTExchange", "WNE") {}
 
     function getListingPrice() public view returns (uint256) {
         return listingPrice;
@@ -1954,37 +1954,35 @@ contract IndianNFTExchange is ERC721URIStorage, Ownable, ReentrancyGuard {
         royaltyFeePercent = _royaltyFeePercent;
     }
 
-    function getLatestINEItem() public view returns (INEItem memory) {
-        return INEItems[_tokenIds.current()];
+    function getLatestItem() public view returns (Item memory) {
+        return Items[_tokenIds.current()];
     }
 
-    function getINEItem(
-        uint256 INEItemId
-    ) public view returns (INEItem memory) {
-        return INEItems[INEItemId];
+    function getItem(uint256 ItemId) public view returns (Item memory) {
+        return Items[ItemId];
     }
 
-    function getINEItemsListed() public view returns (uint256) {
+    function getItemsListed() public view returns (uint256) {
         return _itemsListed.current();
     }
 
-    function getSuccessFeeForINEItem(
-        uint256 INEItemId
+    function getSuccessFeeForItem(
+        uint256 ItemId
     ) public view returns (uint256) {
-        return (INEItems[INEItemId].price * successFeePercent) / 100;
+        return (Items[ItemId].price * successFeePercent) / 100;
     }
 
-    function getRoyaltyFeeForINEItem(
-        uint256 INEItemId
+    function getRoyaltyFeeForItem(
+        uint256 ItemId
     ) public view returns (uint256) {
-        return (INEItems[INEItemId].price * royaltyFeePercent) / 100;
+        return (Items[ItemId].price * royaltyFeePercent) / 100;
     }
 
-    function getINEItemPrice(uint256 INEItemId) public view returns (uint256) {
+    function getItemPrice(uint256 ItemId) public view returns (uint256) {
         return
-            INEItems[INEItemId].price +
-            getSuccessFeeForINEItem(INEItemId) +
-            getRoyaltyFeeForINEItem(INEItemId);
+            Items[ItemId].price +
+            getSuccessFeeForItem(ItemId) +
+            getRoyaltyFeeForItem(ItemId);
     }
 
     function withdraw() public onlyOwner {
@@ -1992,78 +1990,71 @@ contract IndianNFTExchange is ERC721URIStorage, Ownable, ReentrancyGuard {
         payable(msg.sender).transfer(balance);
     }
 
-    function getAllINEItems() public view returns (INEItem[] memory) {
-        INEItem[] memory items = new INEItem[](_tokenIds.current());
+    function getAllItems() public view returns (Item[] memory) {
+        Item[] memory items = new Item[](_tokenIds.current());
         for (uint256 i = 0; i < _tokenIds.current(); i++) {
-            items[i] = INEItems[i + 1];
+            items[i] = Items[i + 1];
         }
         return items;
     }
 
-    function getAllINEItemsForSale() public view returns (INEItem[] memory) {
-        INEItem[] memory items = new INEItem[](_itemsListed.current());
+    function getAllItemsForSale() public view returns (Item[] memory) {
+        Item[] memory items = new Item[](_itemsListed.current());
         uint256 counter = 0;
         for (uint256 i = 0; i < _tokenIds.current(); i++) {
-            if (INEItems[i + 1].currentlyListed) {
-                items[counter] = INEItems[i + 1];
+            if (Items[i + 1].currentlyListed) {
+                items[counter] = Items[i + 1];
                 counter++;
             }
         }
         return items;
     }
 
-    function getAllINEItemsForSaleByOwner(
+    function getAllItemsForSaleByOwner(
         address owner
-    ) public view returns (INEItem[] memory) {
-        INEItem[] memory items = new INEItem[](_itemsListed.current());
+    ) public view returns (Item[] memory) {
+        Item[] memory items = new Item[](_itemsListed.current());
         uint256 counter = 0;
         for (uint256 i = 0; i < _tokenIds.current(); i++) {
-            if (
-                INEItems[i + 1].currentlyListed &&
-                INEItems[i + 1].owner == owner
-            ) {
-                items[counter] = INEItems[i + 1];
+            if (Items[i + 1].currentlyListed && Items[i + 1].owner == owner) {
+                items[counter] = Items[i + 1];
                 counter++;
             }
         }
         return items;
     }
 
-    function getAllINEItemsForSaleBySeller(
+    function getAllItemsForSaleBySeller(
         address seller
-    ) public view returns (INEItem[] memory) {
-        INEItem[] memory items = new INEItem[](_itemsListed.current());
+    ) public view returns (Item[] memory) {
+        Item[] memory items = new Item[](_itemsListed.current());
         uint256 counter = 0;
         for (uint256 i = 0; i < _tokenIds.current(); i++) {
-            if (
-                INEItems[i + 1].currentlyListed &&
-                INEItems[i + 1].seller == seller
-            ) {
-                items[counter] = INEItems[i + 1];
+            if (Items[i + 1].currentlyListed && Items[i + 1].seller == seller) {
+                items[counter] = Items[i + 1];
                 counter++;
             }
         }
         return items;
     }
 
-    function getAllINEItemsForSaleByCreator(
+    function getAllItemsForSaleByCreator(
         address creator
-    ) public view returns (INEItem[] memory) {
-        INEItem[] memory items = new INEItem[](_itemsListed.current());
+    ) public view returns (Item[] memory) {
+        Item[] memory items = new Item[](_itemsListed.current());
         uint256 counter = 0;
         for (uint256 i = 0; i < _tokenIds.current(); i++) {
             if (
-                INEItems[i + 1].currentlyListed &&
-                INEItems[i + 1].creator == creator
+                Items[i + 1].currentlyListed && Items[i + 1].creator == creator
             ) {
-                items[counter] = INEItems[i + 1];
+                items[counter] = Items[i + 1];
                 counter++;
             }
         }
         return items;
     }
 
-    function createINEItem(
+    function createItem(
         string memory tokenURI,
         uint256 price
     ) public payable nonReentrant returns (uint256) {
@@ -2078,7 +2069,7 @@ contract IndianNFTExchange is ERC721URIStorage, Ownable, ReentrancyGuard {
         _setTokenURI(newItemId, tokenURI);
         _itemsListed.increment();
 
-        INEItems[newItemId] = INEItem(
+        Items[newItemId] = Item(
             newItemId,
             tokenURI,
             price,
@@ -2090,7 +2081,7 @@ contract IndianNFTExchange is ERC721URIStorage, Ownable, ReentrancyGuard {
 
         _transfer(msg.sender, address(this), newItemId);
 
-        emit INEItemCreated(
+        emit ItemCreated(
             newItemId,
             tokenURI,
             price,
@@ -2103,8 +2094,8 @@ contract IndianNFTExchange is ERC721URIStorage, Ownable, ReentrancyGuard {
         return newItemId;
     }
 
-    function buyINEItem(uint256 INEItemId) public payable nonReentrant {
-        uint256 price = INEItems[INEItemId].price;
+    function buyItem(uint256 ItemId) public payable nonReentrant {
+        uint256 price = Items[ItemId].price;
         uint256 sucessFee = (price * successFeePercent) / 100;
         uint256 royaltyFee = (price * royaltyFeePercent) / 100;
         uint256 totalPrice = price + sucessFee + royaltyFee;
@@ -2114,34 +2105,34 @@ contract IndianNFTExchange is ERC721URIStorage, Ownable, ReentrancyGuard {
             "Please submit the asking price in order to complete the purchase"
         );
         require(
-            INEItems[INEItemId].currentlyListed == true,
+            Items[ItemId].currentlyListed == true,
             "This item is not currently for sale"
         );
         require(
-            INEItems[INEItemId].owner == address(this),
+            Items[ItemId].owner == address(this),
             "This item is not currently for sale"
         );
         require(
-            INEItems[INEItemId].seller != msg.sender,
+            Items[ItemId].seller != msg.sender,
             "You cannot buy your own item"
         );
 
-        INEItems[INEItemId].currentlyListed = false;
-        INEItems[INEItemId].owner = payable(msg.sender);
+        Items[ItemId].currentlyListed = false;
+        Items[ItemId].owner = payable(msg.sender);
 
-        _transfer(address(this), msg.sender, INEItemId);
-        approve(address(this), INEItemId);
+        _transfer(address(this), msg.sender, ItemId);
+        approve(address(this), ItemId);
 
         uint256 priceToBePaid = msg.value - sucessFee - royaltyFee;
 
-        // if (INEItems[INEItemId].creator != INEItems[INEItemId].seller) {
+        // if (Items[ItemId].creator != Items[ItemId].seller) {
         //     uint256 creatorFee = (msg.value * royaltyFeePercent) / 100;
         //     priceToBePaid = priceToBePaid - creatorFee;
-        //     INEItems[INEItemId].creator.transfer(creatorFee);
+        //     Items[ItemId].creator.transfer(creatorFee);
         // }
 
-        INEItems[INEItemId].creator.transfer(royaltyFee);
-        INEItems[INEItemId].seller.transfer(priceToBePaid);
+        Items[ItemId].creator.transfer(royaltyFee);
+        Items[ItemId].seller.transfer(priceToBePaid);
 
         payable(owner()).transfer(listingPrice);
         payable(owner()).transfer(sucessFee);
@@ -2150,8 +2141,8 @@ contract IndianNFTExchange is ERC721URIStorage, Ownable, ReentrancyGuard {
         _itemsListed.decrement();
     }
 
-    function resellINEItem(
-        uint256 INEItemId,
+    function resellItem(
+        uint256 ItemId,
         uint256 price
     ) public payable nonReentrant {
         require(
@@ -2160,23 +2151,23 @@ contract IndianNFTExchange is ERC721URIStorage, Ownable, ReentrancyGuard {
         );
 
         require(
-            INEItems[INEItemId].owner == msg.sender,
+            Items[ItemId].owner == msg.sender,
             "You must own this item in order to list it for sale"
         );
         require(
-            INEItems[INEItemId].currentlyListed == false,
+            Items[ItemId].currentlyListed == false,
             "This item is already for sale"
         );
         require(price > 0, "Price must be greater than 0");
 
-        INEItems[INEItemId].price = price;
-        INEItems[INEItemId].currentlyListed = true;
-        INEItems[INEItemId].seller = payable(msg.sender);
-        INEItems[INEItemId].owner = payable(address(this));
+        Items[ItemId].price = price;
+        Items[ItemId].currentlyListed = true;
+        Items[ItemId].seller = payable(msg.sender);
+        Items[ItemId].owner = payable(address(this));
 
         _itemsSold.decrement();
         _itemsListed.increment();
 
-        _transfer(msg.sender, address(this), INEItemId);
+        _transfer(msg.sender, address(this), ItemId);
     }
 }

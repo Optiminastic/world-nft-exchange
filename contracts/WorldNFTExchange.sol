@@ -42,7 +42,7 @@ contract WorldNFTExchange is ERC721URIStorage, Ownable, ReentrancyGuard {
 
     mapping(uint256 => Item) private Items;
 
-    constructor() ERC721("WorldNFTExchange", "") {}
+    constructor() ERC721("WorldNFTExchange", "WNE") {}
 
     function getListingPrice() public view returns (uint256) {
         return listingPrice;
