@@ -1,5 +1,6 @@
+// SPDX-License-Identifier: MIT
 // Sources flattened with hardhat v2.12.3 https://hardhat.org
-// SPDX-License-Identifier: MIXED
+
 // File @openzeppelin/contracts/utils/Counters.sol@v4.8.0
 
 // License-Identifier: MIT
@@ -1994,62 +1995,6 @@ contract WorldNFTExchange is ERC721URIStorage, Ownable, ReentrancyGuard {
         Item[] memory items = new Item[](_tokenIds.current());
         for (uint256 i = 0; i < _tokenIds.current(); i++) {
             items[i] = Items[i + 1];
-        }
-        return items;
-    }
-
-    function getAllItemsForSale() public view returns (Item[] memory) {
-        Item[] memory items = new Item[](_itemsListed.current());
-        uint256 counter = 0;
-        for (uint256 i = 0; i < _tokenIds.current(); i++) {
-            if (Items[i + 1].currentlyListed) {
-                items[counter] = Items[i + 1];
-                counter++;
-            }
-        }
-        return items;
-    }
-
-    function getAllItemsForSaleByOwner(
-        address owner
-    ) public view returns (Item[] memory) {
-        Item[] memory items = new Item[](_itemsListed.current());
-        uint256 counter = 0;
-        for (uint256 i = 0; i < _tokenIds.current(); i++) {
-            if (Items[i + 1].currentlyListed && Items[i + 1].owner == owner) {
-                items[counter] = Items[i + 1];
-                counter++;
-            }
-        }
-        return items;
-    }
-
-    function getAllItemsForSaleBySeller(
-        address seller
-    ) public view returns (Item[] memory) {
-        Item[] memory items = new Item[](_itemsListed.current());
-        uint256 counter = 0;
-        for (uint256 i = 0; i < _tokenIds.current(); i++) {
-            if (Items[i + 1].currentlyListed && Items[i + 1].seller == seller) {
-                items[counter] = Items[i + 1];
-                counter++;
-            }
-        }
-        return items;
-    }
-
-    function getAllItemsForSaleByCreator(
-        address creator
-    ) public view returns (Item[] memory) {
-        Item[] memory items = new Item[](_itemsListed.current());
-        uint256 counter = 0;
-        for (uint256 i = 0; i < _tokenIds.current(); i++) {
-            if (
-                Items[i + 1].currentlyListed && Items[i + 1].creator == creator
-            ) {
-                items[counter] = Items[i + 1];
-                counter++;
-            }
         }
         return items;
     }

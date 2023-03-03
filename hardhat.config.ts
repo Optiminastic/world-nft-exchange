@@ -35,7 +35,15 @@ const MAINNET_URL = `https://eth-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY_MAIN
 
 // console.log(MAINNET_URL);
 const config: HardhatUserConfig = {
-  solidity: "0.8.17",
+  solidity: {
+    version: "0.8.17",
+    settings: {
+      optimizer: {
+        enabled: true,
+        runs: 1000,
+      },
+    },
+  },
   networks: {
     localhost: {
       url: "http://127.0.0.1:8545",
