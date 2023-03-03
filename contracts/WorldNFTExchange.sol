@@ -116,62 +116,6 @@ contract WorldNFTExchange is ERC721URIStorage, Ownable, ReentrancyGuard {
         return items;
     }
 
-    function getAllItemsForSale() public view returns (Item[] memory) {
-        Item[] memory items = new Item[](_itemsListed.current());
-        uint256 counter = 0;
-        for (uint256 i = 0; i < _tokenIds.current(); i++) {
-            if (Items[i + 1].currentlyListed) {
-                items[counter] = Items[i + 1];
-                counter++;
-            }
-        }
-        return items;
-    }
-
-    function getAllItemsForSaleByOwner(
-        address owner
-    ) public view returns (Item[] memory) {
-        Item[] memory items = new Item[](_itemsListed.current());
-        uint256 counter = 0;
-        for (uint256 i = 0; i < _tokenIds.current(); i++) {
-            if (Items[i + 1].currentlyListed && Items[i + 1].owner == owner) {
-                items[counter] = Items[i + 1];
-                counter++;
-            }
-        }
-        return items;
-    }
-
-    function getAllItemsForSaleBySeller(
-        address seller
-    ) public view returns (Item[] memory) {
-        Item[] memory items = new Item[](_itemsListed.current());
-        uint256 counter = 0;
-        for (uint256 i = 0; i < _tokenIds.current(); i++) {
-            if (Items[i + 1].currentlyListed && Items[i + 1].seller == seller) {
-                items[counter] = Items[i + 1];
-                counter++;
-            }
-        }
-        return items;
-    }
-
-    function getAllItemsForSaleByCreator(
-        address creator
-    ) public view returns (Item[] memory) {
-        Item[] memory items = new Item[](_itemsListed.current());
-        uint256 counter = 0;
-        for (uint256 i = 0; i < _tokenIds.current(); i++) {
-            if (
-                Items[i + 1].currentlyListed && Items[i + 1].creator == creator
-            ) {
-                items[counter] = Items[i + 1];
-                counter++;
-            }
-        }
-        return items;
-    }
-
     function createItem(
         string memory tokenURI,
         uint256 price

@@ -7,6 +7,11 @@ async function main() {
   console.log("Deploying WNE...");
 
   await wneInstance.deployed();
+  const reciept = await wneInstance.deployTransaction.wait();
+
+  console.log(
+    ethers.utils.formatEther(reciept.gasUsed.mul(reciept.effectiveGasPrice))
+  );
 
   console.log(`WNE deployed to ${wneInstance.address}`);
 }
