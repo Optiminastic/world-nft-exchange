@@ -31,6 +31,7 @@ if (!MAINNET_PRIVATE_KEY) {
 }
 
 const SEPOLIA_URL = `https://eth-sepolia.g.alchemy.com/v2/${ALCHEMY_API_KEY}`;
+const MUMBAI_URL = `https://polygon-mumbai.g.alchemy.com/v2/${ALCHEMY_API_KEY}`;
 const MAINNET_URL = `https://eth-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY_MAINNET}`;
 
 // console.log(MAINNET_URL);
@@ -50,6 +51,10 @@ const config: HardhatUserConfig = {
     },
     sepolia: {
       url: SEPOLIA_URL,
+      accounts: [PRIVATE_KEY!],
+    },
+    mumbai: {
+      url: MUMBAI_URL,
       accounts: [PRIVATE_KEY!],
     },
     mainnet: {
